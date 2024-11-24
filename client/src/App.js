@@ -17,7 +17,8 @@ function App() {
   const [username, setUsername] = useState(null);
   const [userFound, setUserFound] = useState(false);
   const [editUsername, setEditUsername] = useState(null);
-  const [gender, setGender] = useState('');
+  const [gender, setGender] = useState(null);
+  const [postid, setPostid] = useState(null);
 
   const handleChange = (event) => {
     setGender(event.target.value);
@@ -80,6 +81,38 @@ function App() {
   };
 
 
+  const deletePost = async (postid) => {
+    if (postid === null) {
+      return;
+    }
+
+    try {
+      fetch("users/delete", {
+        method: "POST",
+        headers: {"Content-type": "application/json"},
+        body: JSON.stringify({
+          "username": username,
+          "postid": postid
+        }),
+        mode: "cors"
+      }).then(async response => {
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || "Unknown error");
+        }
+
+        return response.json()
+      }).then(data => {
+        console.log(data)
+      })
+      
+    } catch (err) {
+      console.log("error occurred:", err.message);
+    }
+    
+  };
+
+
   return (
     <Box display="flex" flexDirection="column" alignItems="center" justifyContent={"center"}>
       <h1>Select database to fetch data from</h1>
@@ -92,30 +125,58 @@ function App() {
       <h2>Search user's posts
       </h2>
       <Stack spacing={2} direction="row" padding={3}>
-        <TextField color="05668d" label="username" variant="outlined" focused onChange={(e) => {setUsername(e.target.value);}}/>
+        <TextField 
+          color="05668d" 
+          label="username" 
+          variant="outlined" 
+          focused 
+          onChange={(e) => {setUsername(e.target.value)}}
+        />
         <Button sx={{ backgroundColor:"#05668d" }} variant="contained" onClick={() => fetchData(username)}>Fetch</Button>
       </Stack>
 
       {userFound ? 
         <Box display="flex" flexDirection="column" alignItems="center" justifyContent={"center"}>
-          <h3>Edit user info</h3>
-          <Stack spacing={2} direction="row" padding={3}>
-            <TextField color="05668d" label="Edit username" variant="outlined" defaultValue={username} focused onChange={(e) => {setEditUsername(e.target.value);}}/>
-            <FormControl fullWidth>
-              <InputLabel id="select-gender">Edit gender</InputLabel>
-              <Select
-                value={gender}
-                label="Gender"
-                onChange={handleChange}
-              >
-                <MenuItem value={"Male"}>Male</MenuItem>
-                <MenuItem value={"Female"}>Female</MenuItem>
-                <MenuItem value={"Not disclosed"}>Not disclosed</MenuItem>
-              </Select>
-            </FormControl>
+          <Box display="flex" flexDirection="row" alignItems="center" justifyContent={"center"}>
+            <Box display="flex" flexDirection="column" alignItems="center" justifyContent={"center"}>
+              <h3>Edit user info</h3>
+              <Stack spacing={2} direction="row" padding={3}>
+                <TextField 
+                  color="05668d" 
+                  label="Edit username" 
+                  variant="outlined" 
+                  defaultValue={username} 
+                  focused onChange={(e) => {setEditUsername(e.target.value)}}
+                />
+                <FormControl fullWidth>
+                  <InputLabel id="select-gender">Edit gender</InputLabel>
+                  <Select
+                    value={gender}
+                    label="Gender"
+                    onChange={handleChange}
+                  >
+                    <MenuItem value={"Male"}>Male</MenuItem>
+                    <MenuItem value={"Female"}>Female</MenuItem>
+                    <MenuItem value={"Not disclosed"}>Not disclosed</MenuItem>
+                  </Select>
+                </FormControl>
 
-            <Button sx={{ backgroundColor:"#05668d" }} variant="contained" onClick={() => sendData(editUsername, gender)}>Submit changes</Button>
-          </Stack>
+                <Button sx={{ backgroundColor:"#05668d" }} variant="contained" onClick={() => sendData(editUsername, gender)}>Submit changes</Button>
+              </Stack>
+            </Box> 
+            <Box display="flex" flexDirection="column" alignItems="center" justifyContent={"center"}>
+              <h3>Delete post by post ID</h3>
+              <Stack spacing={2} direction="row" padding={3}>
+                  <TextField
+                  label="Post ID"
+                  type="text"
+                  onChange={(e) => {setPostid(e.target.value)}}
+                />
+                <Button sx={{ backgroundColor:"#05668d" }} variant="contained" onClick={() => deletePost(postid)}>Delete post</Button>
+              </Stack>
+            </Box> 
+
+          </Box> 
         </Box> 
         
       : null}

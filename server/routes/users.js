@@ -158,7 +158,6 @@ router.get('/data/:username', async (req, res) => {
 
 
 router.post('/edit', async (req, res) => {
-  console.log(req.body)
   let username = req.body.username;
   let edited_username = req.body.new_username;
   let edited_gender = req.body.gender;
@@ -211,6 +210,37 @@ router.post('/edit', async (req, res) => {
     }
 
     return res.status(200).json({ message: "User updated successfully" });
+
+  } catch (err) {
+    console.log(err)
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.post('/delete', async (req, res) => {
+  let username = req.body.username;
+  let postid = req.body.postid;
+  let user;
+
+  try {
+    user = await User.findOne({ username });
+
+    if (user) { // if user is found from Mongo, delete their post
+
+      deleteRes = await Post.deleteOne( {_id: postid} );
+      console.log(deleteRes);
+      
+    } else {
+      const sqlDeleteQuery = 'DELETE FROM Posts WHERE postid = $1';
+
+      const sqlDeleteRes = await client.query(sqlDeleteQuery, [postid]);
+      if (sqlDeleteRes.rowCount === 0) {
+        return res.status(404).json({ error: "User not found" });
+      }
+    }
+
+    return res.status(200).json({ message: "Post deleted successfully" });
 
   } catch (err) {
     console.log(err)
