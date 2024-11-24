@@ -28,21 +28,53 @@ function App() {
       const response = await fetch(`users/data/${location}`);
       const result = await response.json();
       console.log("result", result)
+
       if (result.error || result == null) {
         console.log(result.error)
-        throw new Error(result.error)    
+        throw new Error(result.error);
       }
-
-      setData(result);
-
+      
       if (location == username) {
         setUserFound(true);
       } else {
         setUserFound(false);
       }
+
+      setData(result);
       
-    } catch {
-      console.log("error occurred");
+    } catch (err) {
+      setData(null)
+      setUserFound(false);
+      console.log("error occurred:", err.message);
+    }
+    
+  };
+
+
+  const sendData = async (editUsername, gender) => {
+    try {
+      fetch("users/edit", {
+        method: "POST",
+        headers: {"Content-type": "application/json"},
+        body: JSON.stringify({
+          "username": username,
+          "new_username": editUsername,
+          "gender": gender
+        }),
+        mode: "cors"
+      }).then(async response => {
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || "Unknown error");
+        }
+
+        return response.json()
+      }).then(data => {
+        console.log(data)
+      })
+      
+    } catch (err) {
+      console.log("error occurred:", err.message);
     }
     
   };
@@ -82,7 +114,7 @@ function App() {
               </Select>
             </FormControl>
 
-            <Button sx={{ backgroundColor:"#05668d" }} variant="contained" onClick={() => fetchData(username)}>Submit changes</Button>
+            <Button sx={{ backgroundColor:"#05668d" }} variant="contained" onClick={() => sendData(editUsername, gender)}>Submit changes</Button>
           </Stack>
         </Box> 
         

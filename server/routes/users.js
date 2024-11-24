@@ -157,4 +157,66 @@ router.get('/data/:username', async (req, res) => {
 });
 
 
+router.post('/edit', async (req, res) => {
+  console.log(req.body)
+  let username = req.body.username;
+  let edited_username = req.body.new_username;
+  let edited_gender = req.body.gender;
+  let user;
+
+  try {
+
+    if (edited_username == null && edited_gender == null) {
+      return res.status(406).json({ error: "No chanegs provided" });
+    } else if (edited_username == null) { // return if no changes are sent from client
+      edited_username = username;
+    }
+
+    user = await User.findOne({ username });
+
+    if (user) { // if user is found from Mongo, edit their info
+      console.log(user)
+      console.log(user._id)
+
+      if (edited_gender == null) {
+        updateRes = await User.updateOne({ _id: user._id }, 
+          { $set: { 
+            username: edited_username
+          }}
+        )
+      } else {
+        updateRes = await User.updateOne({ _id: user._id }, 
+          { $set: { 
+            username: edited_username,
+            gender: edited_gender
+          }}
+        )
+      };
+      
+    } else {
+      const sqlUsernameQuery = 'UPDATE Users SET username = $1 WHERE username = $2';
+      const sqlUserGenderQuery = 'UPDATE Users SET gender = $1 WHERE username = $2';
+
+      if (edited_gender != null) {
+        const sqlGenderRes = await client.query(sqlUserGenderQuery, [edited_gender, username]);
+        if (sqlGenderRes.rowCount === 0) {
+          return res.status(404).json({ error: "User not found" });
+        }
+      }
+
+      const sqlUserRes = await client.query(sqlUsernameQuery, [edited_username, username]);
+      if (sqlUserRes.rowCount === 0) {
+        return res.status(404).json({ error: "User not found" });
+      }
+    }
+
+    return res.status(200).json({ message: "User updated successfully" });
+
+  } catch (err) {
+    console.log(err)
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+
 module.exports = router;
