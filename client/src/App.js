@@ -19,6 +19,7 @@ function App() {
   const [editUsername, setEditUsername] = useState(null);
   const [gender, setGender] = useState(null);
   const [postid, setPostid] = useState(null);
+  const [content, setContent] = useState(null);
 
   const handleChange = (event) => {
     setGender(event.target.value);
@@ -112,6 +113,37 @@ function App() {
     
   };
 
+  const addPost = async (content) => {
+    if (content === null) {
+      return;
+    }
+
+    try {
+      fetch("users/insert", {
+        method: "POST",
+        headers: {"Content-type": "application/json"},
+        body: JSON.stringify({
+          "username": username,
+          "content": content
+        }),
+        mode: "cors"
+      }).then(async response => {
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || "Unknown error");
+        }
+
+        return response.json()
+      }).then(data => {
+        console.log(data)
+      })
+      
+    } catch (err) {
+      console.log("error occurred:", err.message);
+    }
+    
+  };
+
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center" justifyContent={"center"}>
@@ -160,10 +192,10 @@ function App() {
                     <MenuItem value={"Not disclosed"}>Not disclosed</MenuItem>
                   </Select>
                 </FormControl>
-
                 <Button sx={{ backgroundColor:"#05668d" }} variant="contained" onClick={() => sendData(editUsername, gender)}>Submit changes</Button>
               </Stack>
             </Box> 
+
             <Box display="flex" flexDirection="column" alignItems="center" justifyContent={"center"}>
               <h3>Delete post by post ID</h3>
               <Stack spacing={2} direction="row" padding={3}>
@@ -175,8 +207,19 @@ function App() {
                 <Button sx={{ backgroundColor:"#05668d" }} variant="contained" onClick={() => deletePost(postid)}>Delete post</Button>
               </Stack>
             </Box> 
-
           </Box> 
+          <h3>Create new post for user</h3>
+          <Stack spacing={2} direction="row" padding={1} alignItems="flex-start">
+            <TextField 
+              color="05668d" 
+              label="Content" 
+              variant="outlined" 
+              multiline
+              maxRows={5}
+              focused onChange={(e) => {setContent(e.target.value)}}
+            />
+            <Button sx={{ backgroundColor:"#05668d", flexShrink: 0 }} variant="contained" onClick={() => addPost(content)}>Submit</Button>
+          </Stack>
         </Box> 
         
       : null}

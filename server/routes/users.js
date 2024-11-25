@@ -249,4 +249,46 @@ router.post('/delete', async (req, res) => {
 });
 
 
+router.post('/insert', async (req, res) => {
+  let username = req.body.username;
+  let postContent = req.body.content;
+  let user;
+
+  try {
+    user = await User.findOne({ username });
+
+    if (user) { // if user is found from Mongo, add new post
+
+      insertRes = await Post.create( {
+        userid: user._id,
+        content: postContent
+      } );
+      console.log(insertRes);
+      
+    } else {
+      const sqlInsertQuery = 'INSERT INTO Posts (userid, content) VALUES ($1, $2)';
+      const sqlUseridQuery = 'SELECT userid FROM Users WHERE username = $1';
+
+      const sqlUseridRes = await client.query(sqlUseridQuery, [username]);
+      console.log(sqlUseridRes.rows[0].userid)
+      if (sqlUseridRes.rowCount === 0) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      let userid = sqlUseridRes.rows[0].userid
+
+      const sqlInsertRes = await client.query(sqlInsertQuery, [userid, postContent]);
+      if (sqlInsertRes.rowCount === 0) {
+        return res.status(404).json({ error: "Error in adding post" });
+      }
+    }
+
+    return res.status(200).json({ message: "Post added successfully" });
+
+  } catch (err) {
+    console.log(err)
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+
 module.exports = router;
