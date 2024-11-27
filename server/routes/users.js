@@ -9,13 +9,6 @@ const { Pool } = require('pg');
 
 const client = new Pool({ connectionString: process.env.POSTGRE_DB_URL });
 
-
-/* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
-});
-
-
 router.get('/data/pg', async (req, res) => {
 
   try {
@@ -32,7 +25,7 @@ router.get('/data/pg', async (req, res) => {
       { title: "Users", data: users.rows },
       { title: "Posts", data: posts.rows }
     ];
-    //console.log(response)
+
     res.json(response);
   } catch (err) {
     console.error(err);
@@ -68,6 +61,7 @@ router.get('/data/joined', async (req, res) => {
       client.query('SELECT * FROM Posts'),
     ]); 
     
+    // create joined data from both databases for user and post data
     const joinedUsers = [
       ...pgUsers.rows.map(user => ({
         id: user.userid,
@@ -123,8 +117,6 @@ router.get('/data/:username', async (req, res) => {
     user = await User.findOne({ username });
 
     if (user) { // if user is found from Mongo, fetch their posts
-      console.log(user)
-      console.log(user._id)
       posts = await Post.find({ userid: user._id});
     } else {
       const sqlUserQuery = 'SELECT * FROM Users WHERE username = $1';
@@ -135,7 +127,6 @@ router.get('/data/:username', async (req, res) => {
         return res.status(404).json({ error: "User not found" });
       }
 
-      console.log(user)
       user = sqlRes.rows[0];
       const sqlPosts = await client.query(sqlPostsQuery, [user.userid]);
       posts = sqlPosts.rows
@@ -163,14 +154,13 @@ router.post('/edit', async (req, res) => {
   let edited_gender = req.body.gender;
   let user;
 
+  if (edited_username == null && edited_gender == null) { // return if no changes are sent from client
+    return res.status(406).json({ error: "No chanegs provided" });
+  } else if (edited_username == null) { // using the old username if new username was not provided
+    edited_username = username;
+  }
+
   try {
-
-    if (edited_username == null && edited_gender == null) {
-      return res.status(406).json({ error: "No chanegs provided" });
-    } else if (edited_username == null) { // return if no changes are sent from client
-      edited_username = username;
-    }
-
     user = await User.findOne({ username });
 
     if (user) { // if user is found from Mongo, edit their info
@@ -270,11 +260,10 @@ router.post('/insert', async (req, res) => {
       const sqlUseridQuery = 'SELECT userid FROM Users WHERE username = $1';
 
       const sqlUseridRes = await client.query(sqlUseridQuery, [username]);
-      console.log(sqlUseridRes.rows[0].userid)
       if (sqlUseridRes.rowCount === 0) {
         return res.status(404).json({ error: "User not found" });
       }
-      let userid = sqlUseridRes.rows[0].userid
+      let userid = sqlUseridRes.rows[0].userid;
 
       const sqlInsertRes = await client.query(sqlInsertQuery, [userid, postContent]);
       if (sqlInsertRes.rowCount === 0) {
